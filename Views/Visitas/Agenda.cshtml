@@ -1,0 +1,32 @@
+@model IEnumerable<PortalInmobiliario.Models.Visita>
+
+<h2>Agenda del día (@DateTime.Today.ToShortDateString())</h2>
+
+<table class="table">
+    <thead><tr><th>Inicio</th><th>Fin</th><th>Inmueble</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>
+    @foreach(var v in Model) {
+        <tr>
+            <td>@v.FechaInicio.ToString("g")</td>
+            <td>@v.FechaFin.ToString("g")</td>
+            <td>@v.Inmueble?.Titulo</td>
+            <td>@v.UsuarioId</td>
+            <td>@v.Estado</td>
+            <td>
+                <form asp-area="Broker" asp-controller="Visitas" asp-action="CambiarEstado" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@v.Id" />
+                    <input type="hidden" name="estado" value="Confirmada" />
+                    <button class="btn btn-sm btn-success">Confirmar</button>
+                </form>
+                <form asp-area="Broker" asp-controller="Visitas" asp-action="CambiarEstado" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@v.Id" />
+                    <input type="hidden" name="estado" value="Cancelada" />
+                    <button class="btn btn-sm btn-danger">Cancelar</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

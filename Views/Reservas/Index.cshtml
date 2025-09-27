@@ -1,0 +1,23 @@
+@model IEnumerable<PortalInmobiliario.Models.Reserva>
+
+<h2>Reservas activas</h2>
+
+<table class="table">
+    <thead><tr><th>Inmueble</th><th>Usuario</th><th>Expira</th><th></th></tr></thead>
+    <tbody>
+    @foreach(var r in Model) {
+        <tr>
+            <td>@r.Inmueble?.Titulo</td>
+            <td>@r.UsuarioId</td>
+            <td>@r.FechaExpiracion.ToString("g")</td>
+            <td>
+                <form asp-area="Broker" asp-controller="Reservas" asp-action="Liberar" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@r.Id" />
+                    <button class="btn btn-sm btn-danger">Liberar</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
