@@ -4,18 +4,20 @@ using PortalInmobiliario.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Connection string
+// Connection string: por defecto SQLite (local)
+// En producción (Render) tomará de las variables de entorno
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? "Data Source=app.db"; // fallback local
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseSqlite(connectionString)); // 👈 Cambia a UseNpgsql si usas PostgreSQL en Render
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Identity con Roles
-builder.Services.AddDefaultIdentity<IdentityUser>(options => 
-        options.SignIn.RequireConfirmedAccount = false) // facil para pruebas
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+        options.SignIn.RequireConfirmedAccount = false) // más fácil en pruebas
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
@@ -23,7 +25,7 @@ builder.Services.AddControllersWithViews();
 
 // Redis (IDistributedCache)
 var redisConnection = builder.Configuration.GetConnectionString("Redis") 
-                      ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
+                      ?? Environment.GetEnvironmentVariable("Redis__ConnectionString") 
                       ?? "localhost:6379";
 
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -42,7 +44,7 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Aplicar migraciones al iniciar (creará app.db si no existe)
+// ⚡ Migraciones automáticas en cada inicio (muy útil en Render)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -61,6 +63,7 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseSession();
