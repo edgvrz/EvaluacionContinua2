@@ -291,3 +291,4 @@ D:\Usmp6\Programacion\EvaluacionContinua2\PortalInmobiliario\obj\Debug\net9.0\re
 D:\Usmp6\Programacion\EvaluacionContinua2\PortalInmobiliario\obj\Debug\net9.0\PortalInmobiliario.pdb
 D:\Usmp6\Programacion\EvaluacionContinua2\PortalInmobiliario\obj\Debug\net9.0\PortalInmobiliario.genruntimeconfig.cache
 D:\Usmp6\Programacion\EvaluacionContinua2\PortalInmobiliario\obj\Debug\net9.0\ref\PortalInmobiliario.dll
+D:\Usmp6\Programacion\EvaluacionContinua2\PortalInmobiliario\obj\Debug\net9.0\PortalInmobiliario.sourcelink.json
