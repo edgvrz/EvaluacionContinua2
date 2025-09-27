@@ -1,0 +1,42 @@
+@model PortalInmobiliario.Models.Inmueble
+
+
+<h2>Editar Inmueble</h2>
+
+
+<form asp-area="Broker" asp-controller="Panel" asp-action="EditInmueble" asp-route-id="@Model.Id" method="post">
+@Html.AntiForgeryToken()
+<div class="mb-3">
+<label asp-for="Codigo" class="form-label"></label>
+<input asp-for="Codigo" class="form-control" />
+<span asp-validation-for="Codigo" class="text-danger"></span>
+</div>
+<div class="mb-3">
+<label asp-for="Titulo" class="form-label"></label>
+<input asp-for="Titulo" class="form-control" />
+<span asp-validation-for="Titulo" class="text-danger"></span>
+</div>
+<div class="mb-3">
+<label asp-for="Ciudad" class="form-label"></label>
+<input asp-for="Ciudad" class="form-control" />
+<span asp-validation-for="Ciudad" class="text-danger"></span>
+</div>
+<div class="mb-3">
+<label asp-for="Precio" class="form-label"></label>
+<input asp-for="Precio" class="form-control" />
+<span asp-validation-for="Precio" class="text-danger"></span>
+</div>
+<div class="form-check mb-3">
+<input asp-for="Activo" class="form-check-input" />
+<label asp-for="Activo" class="form-check-label"></label>
+</div>
+<div class="mb-3">
+<button type="submit" class="btn btn-primary">Guardar</button>
+<a asp-area="Broker" asp-controller="Panel" asp-action="Inmuebles" class="btn btn-secondary">Cancelar</a>
+</div>
+</form>
+
+
+@section Scripts {
+@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

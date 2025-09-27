@@ -1,0 +1,45 @@
+@model IEnumerable<PortalInmobiliario.Models.Inmueble>
+
+
+@{
+ViewData["Title"] = "Inmuebles - Panel Broker";
+}
+
+
+<h2>@ViewData["Title"]</h2>
+
+
+<p><a asp-area="Broker" asp-controller="Panel" asp-action="CreateInmueble" class="btn btn-primary">Crear Inmueble</a></p>
+
+
+<table class="table">
+<thead>
+<tr>
+<th>Código</th>
+<th>Título</th>
+<th>Ciudad</th>
+<th>Precio</th>
+<th>Activo</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+@foreach (var i in Model)
+{
+<tr>
+<td>@i.Codigo</td>
+<td>@i.Titulo</td>
+<td>@i.Ciudad</td>
+<td>@i.Precio</td>
+<td>@i.Activo</td>
+<td>
+<a asp-area="Broker" asp-controller="Panel" asp-action="EditInmueble" asp-route-id="@i.Id" class="btn btn-sm btn-secondary">Editar</a>
+<form asp-area="Broker" asp-controller="Panel" asp-action="ToggleActivo" asp-route-id="@i.Id" method="post" class="d-inline">
+@Html.AntiForgeryToken()
+<button class="btn btn-sm btn-warning">Toggle Activo</button>
+</form>
+</td>
+</tr>
+}
+</tbody>
+</table>
