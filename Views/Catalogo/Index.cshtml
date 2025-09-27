@@ -1,0 +1,58 @@
+@model IEnumerable<PortalInmobiliario.Models.Inmueble>
+
+<h2>Catálogo</h2>
+
+<form method="get">
+    <div class="row">
+        <div class="col">
+            <input type="text" name="ciudad" placeholder="Ciudad" value="@Context.Request.Query["ciudad"]" class="form-control"/>
+        </div>
+        <div class="col">
+            <select name="tipo" class="form-control">
+                <option value="">-- Tipo --</option>
+                @foreach (var t in Enum.GetValues(typeof(PortalInmobiliario.Models.TipoInmueble)))
+                {
+                    <option value="@t" selected="@(Context.Request.Query["tipo"] == t.ToString())">@t</option>
+                }
+            </select>
+        </div>
+        <div class="col">
+            <input type="number" name="precioMin" placeholder="Precio mínimo" value="@Context.Request.Query["precioMin"]" class="form-control"/>
+        </div>
+        <div class="col">
+            <input type="number" name="precioMax" placeholder="Precio máximo" value="@Context.Request.Query["precioMax"]" class="form-control"/>
+        </div>
+        <div class="col">
+            <input type="number" name="dormitorios" placeholder="Dormitorios ≥" value="@Context.Request.Query["dormitorios"]" class="form-control"/>
+        </div>
+        <div class="col">
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+        </div>
+    </div>
+</form>
+
+<hr/>
+
+@if (!Model.Any())
+{
+    <p>No se encontraron inmuebles.</p>
+}
+else
+{
+    <div class="row">
+        @foreach (var i in Model)
+        {
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <img src="@i.Imagen" class="card-img-top" />
+                    <div class="card-body">
+                        <h5>@i.Titulo</h5>
+                        <p>@i.Ciudad - @i.Direccion</p>
+                        <p><b>Precio:</b> @i.Precio</p>
+                        <a class="btn btn-sm btn-info" asp-action="Detalle" asp-route-id="@i.Id">Ver detalle</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,29 @@
+@model PortalInmobiliario.Models.Visita
+
+<h2>Agendar visita</h2>
+
+<form asp-action="AgendarVisita" method="post">
+    <input type="hidden" asp-for="InmuebleId" />
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <div class="form-group">
+        <label asp-for="FechaInicio"></label>
+        <input asp-for="FechaInicio" type="datetime-local" class="form-control" />
+        <span asp-validation-for="FechaInicio" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="FechaFin"></label>
+        <input asp-for="FechaFin" type="datetime-local" class="form-control" />
+        <span asp-validation-for="FechaFin" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Notas"></label>
+        <textarea asp-for="Notas" class="form-control"></textarea>
+        <span asp-validation-for="Notas" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Agendar</button>
+    <a asp-action="Detalle" asp-route-id="@Model.InmuebleId" class="btn btn-secondary">Cancelar</a>
+</form>

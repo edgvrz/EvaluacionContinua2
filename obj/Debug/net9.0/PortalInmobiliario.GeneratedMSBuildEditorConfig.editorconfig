@@ -32,6 +32,18 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Usmp6/Programacion/EvaluacionContinua2/PortalInmobiliario/Views/Catalogo/AgendarVisita.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2F0YWxvZ29cQWdlbmRhclZpc2l0YS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Usmp6/Programacion/EvaluacionContinua2/PortalInmobiliario/Views/Catalogo/Detalle.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2F0YWxvZ29cRGV0YWxsZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Usmp6/Programacion/EvaluacionContinua2/PortalInmobiliario/Views/Catalogo/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2F0YWxvZ29cSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Usmp6/Programacion/EvaluacionContinua2/PortalInmobiliario/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

@@ -1,0 +1,30 @@
+@model PortalInmobiliario.Models.Inmueble
+
+<h2>@Model.Titulo</h2>
+<img src="@Model.Imagen" class="img-fluid" />
+<p>@Model.Direccion - @Model.Ciudad</p>
+<p><b>Precio:</b> @Model.Precio</p>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<a class="btn btn-primary" asp-action="AgendarVisita" asp-route-id="@Model.Id">
+    Agendar visita
+</a>
+
+@if (Model.Reserva == null || Model.Reserva.FechaExpiracion < DateTime.Now)
+{
+    <form asp-action="Reservar" asp-route-id="@Model.Id" method="post" style="display:inline">
+        <button type="submit" class="btn btn-success">Reservar ahora</button>
+    </form>
+}
+else
+{
+    <span class="text-danger">Este inmueble ya tiene una reserva activa.</span>
+}
