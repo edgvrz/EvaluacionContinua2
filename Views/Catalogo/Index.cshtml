@@ -1,0 +1,80 @@
+@model IEnumerable<PortalInmobiliario.Models.Inmueble>
+@{
+    ViewData["Title"] = "Catálogo";
+}
+
+<h2>Catálogo de Inmuebles</h2>
+
+<form method="get" class="mb-3">
+    <div>
+        <label>Ciudad:</label>
+        <input type="text" name="ciudad" value="@Context.Request.Query["ciudad"]"
+ />
+    </div>
+    <div>
+        <label>Tipo:</label>
+        <select name="tipo">
+            <option value="">--Todos--</option>
+            @foreach (var tipo in Enum.GetValues(typeof(PortalInmobiliario.Models.TipoInmueble)))
+            {
+                <option value="@tipo" selected="@(Context.Request.Query["tipo"] == tipo.ToString() ? "selected" : null)">@tipo</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label>Precio Mínimo:</label>
+        <input type="number" name="precioMin" value="@Context.Request.Query["precioMin"]" />
+    </div>
+    <div>
+        <label>Precio Máximo:</label>
+        <input type="number" name="precioMax" value="@Context.Request.Query["precioMax"]" />
+    </div>
+    <div>
+        <label>Dormitorios (>=):</label>
+        <input type="number" name="dormitorios" value="@Context.Request.Query["dormitorios"]" />
+    </div>
+    <button type="submit">Filtrar</button>
+</form>
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Título</th>
+            <th>Ciudad</th>
+            <th>Precio</th>
+            <th>Dormitorios</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.Codigo</td>
+            <td>@item.Titulo</td>
+            <td>@item.Ciudad</td>
+            <td>@item.Precio</td>
+            <td>@item.Dormitorios</td>
+            <td>
+                <a asp-action="Detalle" asp-route-id="@item.Id">Ver detalle</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<!-- Paginación -->
+<div>
+    Página @ViewBag.Page de @ViewBag.TotalPages
+    @if (ViewBag.Page > 1)
+    {
+        <a asp-action="Index" asp-route-page="@(ViewBag.Page - 1)">Anterior</a>
+    }
+    @if (ViewBag.Page < ViewBag.TotalPages)
+    {
+        <a asp-action="Index" asp-route-page="@(ViewBag.Page + 1)">Siguiente</a>
+    }
+</div>
