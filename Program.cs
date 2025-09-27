@@ -15,13 +15,13 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Identity con Roles
 builder.Services.AddDefaultIdentity<IdentityUser>(options => 
-        options.SignIn.RequireConfirmedAccount = true)
+        options.SignIn.RequireConfirmedAccount = false) // facil para pruebas
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllersWithViews();
 
-// ✅ Redis
+// Redis (IDistributedCache)
 var redisConnection = builder.Configuration.GetConnectionString("Redis") 
                       ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
                       ?? "localhost:6379";
@@ -32,7 +32,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = "PortalInmobiliario_";
 });
 
-// ✅ Sesiones
+// Sesiones
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -42,7 +42,13 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Pipeline
+// Aplicar migraciones al iniciar (creará app.db si no existe)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -54,9 +60,10 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
 
-app.UseSession();  // ✅ aquí
+app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();

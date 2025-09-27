@@ -1,0 +1,40 @@
+@model IEnumerable<PortalInmobiliario.Models.Inmueble>
+
+<h2>Inmuebles</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Crear nuevo</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Título</th>
+            <th>Ciudad</th>
+            <th>Precio</th>
+            <th>Activo</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var i in Model)
+        {
+            <tr>
+                <td>@i.Codigo</td>
+                <td>@i.Titulo</td>
+                <td>@i.Ciudad</td>
+                <td>@i.Precio</td>
+                <td>@i.Activo</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@i.Id" class="btn btn-sm btn-secondary">Editar</a>
+                    <a asp-action="Delete" asp-route-id="@i.Id" class="btn btn-sm btn-danger">Eliminar</a>
+                    <form asp-action="ToggleActivo" asp-route-id="@i.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-sm btn-warning">Toggle Activo</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

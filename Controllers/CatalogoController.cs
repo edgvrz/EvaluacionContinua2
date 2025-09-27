@@ -1,4 +1,4 @@
-    using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +27,7 @@ namespace PortalInmobiliario.Controllers
 
         // GET: /Catalogo
         public async Task<IActionResult> Index(
-            string ciudad, TipoInmueble? tipo, decimal? precioMin,
+            string? ciudad, TipoInmueble? tipo, decimal? precioMin,
             decimal? precioMax, int? dormitorios, int page = 1, int pageSize = 5)
         {
             // Guardar filtros en sesión
@@ -37,11 +37,13 @@ namespace PortalInmobiliario.Controllers
             HttpContext.Session.SetString("Filtro_PrecioMax", precioMax?.ToString() ?? "");
             HttpContext.Session.SetString("Filtro_Dormitorios", dormitorios?.ToString() ?? "");
 
-            // Validaciones server-side
+            // Validaciones
             if (precioMin.HasValue && precioMax.HasValue && precioMin > precioMax)
-                ModelState.AddModelError("", "El precio mínimo no puede ser mayor que el precio máximo.");
+                ModelState.AddModelError("", "El precio mínimo no puede ser mayor que el máximo.");
 
-            if ((precioMin.HasValue && precioMin < 0) || (precioMax.HasValue && precioMax < 0) || (dormitorios.HasValue && dormitorios < 0))
+            if ((precioMin.HasValue && precioMin < 0) ||
+                (precioMax.HasValue && precioMax < 0) ||
+                (dormitorios.HasValue && dormitorios < 0))
                 ModelState.AddModelError("", "Los valores numéricos no pueden ser negativos.");
 
             if (!ModelState.IsValid)
@@ -57,7 +59,7 @@ namespace PortalInmobiliario.Controllers
 
             // Intentar leer del cache
             var cached = await _cache.GetStringAsync(cacheKey);
-            CatalogoCacheDto cacheDto = null;
+            CatalogoCacheDto? cacheDto = null;
 
             if (!string.IsNullOrEmpty(cached))
             {
@@ -66,9 +68,7 @@ namespace PortalInmobiliario.Controllers
 
             if (cacheDto == null)
             {
-                var query = _context.Inmuebles
-                    .Where(i => i.Activo)
-                    .AsQueryable();
+                var query = _context.Inmuebles.Where(i => i.Activo).AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(ciudad))
                     query = query.Where(i => i.Ciudad.Contains(ciudad));
@@ -96,7 +96,7 @@ namespace PortalInmobiliario.Controllers
                         Id = i.Id,
                         Codigo = i.Codigo,
                         Titulo = i.Titulo,
-                        Imagen = i.Imagen,
+                        Imagen = i.Imagen ?? "",
                         Tipo = i.Tipo,
                         Ciudad = i.Ciudad,
                         Direccion = i.Direccion,
@@ -131,16 +131,11 @@ namespace PortalInmobiliario.Controllers
         public async Task<IActionResult> Detalle(int id)
         {
             var inmueble = await _context.Inmuebles
+                .Include(i => i.Reserva)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             if (inmueble == null)
                 return NotFound();
-
-            // obtener reserva activa
-            var reservaActiva = await _context.Reservas
-                .FirstOrDefaultAsync(r => r.InmuebleId == id && r.FechaExpiracion > DateTime.UtcNow);
-
-            inmueble.Reserva = reservaActiva;
 
             HttpContext.Session.SetInt32("UltimoInmuebleId", id);
             HttpContext.Session.SetString("UltimoInmuebleTitulo", inmueble.Titulo);
@@ -156,7 +151,8 @@ namespace PortalInmobiliario.Controllers
             {
                 InmuebleId = id,
                 FechaInicio = DateTime.Now,
-                FechaFin = DateTime.Now.AddHours(1)
+                FechaFin = DateTime.Now.AddHours(1),
+                Estado = EstadoVisita.Pendiente // 👈 importante para evitar null
             };
             return View(visita);
         }
@@ -170,25 +166,13 @@ namespace PortalInmobiliario.Controllers
 
             visita.UsuarioId = user.Id;
 
-            // Convertir a UTC
-            visita.FechaInicio = DateTime.SpecifyKind(visita.FechaInicio, DateTimeKind.Local).ToUniversalTime();
-            visita.FechaFin = DateTime.SpecifyKind(visita.FechaFin, DateTimeKind.Local).ToUniversalTime();
-
             // Validaciones
             if (visita.FechaInicio >= visita.FechaFin)
-            {
-                ModelState.AddModelError("", "La fecha de inicio debe ser menor que la fecha de fin.");
-            }
+                ModelState.AddModelError("", "La fecha de inicio debe ser menor que la de fin.");
 
-            var inicioLocal = visita.FechaInicio.ToLocalTime().TimeOfDay;
-            var finLocal = visita.FechaFin.ToLocalTime().TimeOfDay;
+            if (visita.FechaInicio.Hour < 8 || visita.FechaFin.Hour > 19)
+                ModelState.AddModelError("", "Las visitas deben ser entre 08:00 y 19:00.");
 
-            if (inicioLocal < TimeSpan.FromHours(8) || finLocal > TimeSpan.FromHours(19))
-            {
-                ModelState.AddModelError("", "Las visitas deben estar dentro del horario laboral (08:00 - 19:00).");
-            }
-
-            // Verificar solapamiento
             bool existeSolapada = await _context.Visitas.AnyAsync(v =>
                 v.InmuebleId == visita.InmuebleId &&
                 v.Estado != EstadoVisita.Cancelada &&
@@ -196,14 +180,10 @@ namespace PortalInmobiliario.Controllers
             );
 
             if (existeSolapada)
-            {
-                ModelState.AddModelError("", "Ya existe una visita en ese intervalo para este inmueble.");
-            }
+                ModelState.AddModelError("", "Ya existe una visita en ese intervalo.");
 
             if (!ModelState.IsValid)
-            {
                 return View(visita);
-            }
 
             _context.Visitas.Add(visita);
             await _context.SaveChangesAsync();
@@ -220,14 +200,12 @@ namespace PortalInmobiliario.Controllers
             if (user == null) return Challenge();
 
             var inmueble = await _context.Inmuebles
+                .Include(i => i.Reserva)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             if (inmueble == null) return NotFound();
 
-            var existeReservaActiva = await _context.Reservas
-                .AnyAsync(r => r.InmuebleId == id && r.FechaExpiracion > DateTime.UtcNow);
-
-            if (existeReservaActiva)
+            if (inmueble.Reserva != null && inmueble.Reserva!.FechaExpiracion > DateTime.UtcNow)
             {
                 TempData["Error"] = "Este inmueble ya tiene una reserva activa.";
                 return RedirectToAction("Detalle", new { id });
@@ -249,3 +227,4 @@ namespace PortalInmobiliario.Controllers
         }
     }
 }
+    

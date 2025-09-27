@@ -1,29 +1,49 @@
-@model IEnumerable<PortalInmobiliario.Models.Inmueble>
+@model IEnumerable<PortalInmobiliario.Models.CatalogoItemDto>
+@using PortalInmobiliario.Models
 
-<h2>Catálogo</h2>
+@{
+    ViewData["Title"] = "Catálogo de Inmuebles";
+}
 
-<form method="get">
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="Index" method="get" class="mb-3">
     <div class="row">
         <div class="col">
-            <input type="text" name="ciudad" placeholder="Ciudad" value="@Context.Request.Query["ciudad"]" class="form-control"/>
+            <input type="text" name="ciudad" placeholder="Ciudad"
+                   value="@ViewContext.HttpContext.Request.Query["ciudad"]"
+                   class="form-control" />
         </div>
         <div class="col">
             <select name="tipo" class="form-control">
                 <option value="">-- Tipo --</option>
-                @foreach (var t in Enum.GetValues(typeof(PortalInmobiliario.Models.TipoInmueble)))
-                {
-                    <option value="@t" selected="@(Context.Request.Query["tipo"] == t.ToString())">@t</option>
-                }
+                @foreach (var t in Enum.GetValues(typeof(TipoInmueble)))
+{
+    if (ViewContext.HttpContext.Request.Query["tipo"] == t.ToString())
+    {
+        <text><option value="@t" selected>@t</option></text>
+    }
+    else
+    {
+        <text><option value="@t">@t</option></text>
+    }
+}
             </select>
         </div>
         <div class="col">
-            <input type="number" name="precioMin" placeholder="Precio mínimo" value="@Context.Request.Query["precioMin"]" class="form-control"/>
+            <input type="number" name="precioMin" placeholder="Precio mínimo"
+                   value="@ViewContext.HttpContext.Request.Query["precioMin"]"
+                   class="form-control" />
         </div>
         <div class="col">
-            <input type="number" name="precioMax" placeholder="Precio máximo" value="@Context.Request.Query["precioMax"]" class="form-control"/>
+            <input type="number" name="precioMax" placeholder="Precio máximo"
+                   value="@ViewContext.HttpContext.Request.Query["precioMax"]"
+                   class="form-control" />
         </div>
         <div class="col">
-            <input type="number" name="dormitorios" placeholder="Dormitorios ≥" value="@Context.Request.Query["dormitorios"]" class="form-control"/>
+            <input type="number" name="dormitorios" placeholder="Dormitorios ≥"
+                   value="@ViewContext.HttpContext.Request.Query["dormitorios"]"
+                   class="form-control" />
         </div>
         <div class="col">
             <button type="submit" class="btn btn-primary">Filtrar</button>
@@ -31,7 +51,7 @@
     </div>
 </form>
 
-<hr/>
+<hr />
 
 @if (!Model.Any())
 {
@@ -44,12 +64,14 @@ else
         {
             <div class="col-md-4">
                 <div class="card mb-3">
-                    <img src="@i.Imagen" class="card-img-top" />
+                    <img src="@i.Imagen" class="card-img-top" alt="Imagen de @i.Titulo" />
                     <div class="card-body">
                         <h5>@i.Titulo</h5>
                         <p>@i.Ciudad - @i.Direccion</p>
-                        <p><b>Precio:</b> @i.Precio</p>
-                        <a class="btn btn-sm btn-info" asp-action="Detalle" asp-route-id="@i.Id">Ver detalle</a>
+                        <p><b>Precio:</b> @i.Precio.ToString("C")</p>
+                        <a class="btn btn-sm btn-info" asp-action="Detalle" asp-route-id="@i.Id">
+                            Ver detalle
+                        </a>
                     </div>
                 </div>
             </div>

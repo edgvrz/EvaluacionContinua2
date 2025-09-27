@@ -10,8 +10,9 @@ namespace PortalInmobiliario.Models
 
     public enum EstadoVisita
     {
-        Solicitada,
+        Pendiente,   // 👈 agregado
         Confirmada,
         Cancelada
     }
 }
+    

@@ -6,35 +6,40 @@ namespace PortalInmobiliario.Models
     {
         public int Id { get; set; }
 
-        [Required, StringLength(50)]
-        public string Codigo { get; set; }
+        [Required]
+        public string Codigo { get; set; } = "";
 
         [Required]
-        public string Titulo { get; set; }
-
-        public string Imagen { get; set; }
+        public string Titulo { get; set; } = "";
 
         [Required]
         public TipoInmueble Tipo { get; set; }
 
-        public string Ciudad { get; set; }
-        public string Direccion { get; set; }
+        [Required]
+        public string Ciudad { get; set; } = "";
 
-        [Range(0, int.MaxValue)]
+        [Required]
+        public string Direccion { get; set; } = "";
+
+        [Range(0, 50)]
         public int Dormitorios { get; set; }
 
-        [Range(0, int.MaxValue)]
+        [Range(0, 20)]
         public int Banos { get; set; }
 
-        [Range(0.01, double.MaxValue)]
-        public double MetrosCuadrados { get; set; }
+        [Range(1, int.MaxValue)]
+        public int MetrosCuadrados { get; set; }
 
-        [Range(0.01, double.MaxValue)]
+        [Range(1, double.MaxValue)]
         public decimal Precio { get; set; }
 
         public bool Activo { get; set; } = true;
 
-        public List<Visita> Visitas { get; set; }
-        public Reserva Reserva { get; set; }
+        [Required]
+        public string Imagen { get; set; } = "";
+
+        // Relaciones
+        public Reserva? Reserva { get; set; }
+        public ICollection<Visita> Visitas { get; set; } = new List<Visita>();
     }
 }

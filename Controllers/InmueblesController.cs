@@ -18,10 +18,38 @@ namespace PortalInmobiliario.Controllers
         }
 
         // GET: /Inmuebles
-        public async Task<IActionResult> Index()
-        {
-            return View(await _context.Inmuebles.ToListAsync());
-        }
+       public IActionResult Index(string ciudad, string tipo, decimal? precioMin, decimal? precioMax, int? dormitorios)
+{
+    var inmuebles = _context.Inmuebles.AsQueryable();
+
+    if (!string.IsNullOrEmpty(ciudad))
+        inmuebles = inmuebles.Where(i => i.Ciudad.Contains(ciudad));
+
+    if (!string.IsNullOrEmpty(tipo))
+        inmuebles = inmuebles.Where(i => i.Tipo.ToString() == tipo);
+
+    if (precioMin.HasValue)
+        inmuebles = inmuebles.Where(i => i.Precio >= precioMin.Value);
+
+    if (precioMax.HasValue)
+        inmuebles = inmuebles.Where(i => i.Precio <= precioMax.Value);
+
+    if (dormitorios.HasValue)
+        inmuebles = inmuebles.Where(i => i.Dormitorios >= dormitorios.Value);
+
+    // Convertir a CatalogoItemDto
+    var model = inmuebles.Select(i => new CatalogoItemDto
+    {
+        Id = i.Id,
+        Titulo = i.Titulo,
+        Imagen = i.Imagen,
+        Ciudad = i.Ciudad,
+        Direccion = i.Direccion,
+        Precio = i.Precio
+    }).ToList();
+
+    return View(model);
+}
 
         // GET: /Inmuebles/Create
         public IActionResult Create()
@@ -39,7 +67,7 @@ namespace PortalInmobiliario.Controllers
                 _context.Add(inmueble);
                 await _context.SaveChangesAsync();
 
-                // 🔹 Invalidar la cache
+                // Invalidar la cache (version simple)
                 await _cache.SetStringAsync("Catalogo_Version", DateTime.UtcNow.Ticks.ToString());
 
                 return RedirectToAction(nameof(Index));
@@ -70,7 +98,7 @@ namespace PortalInmobiliario.Controllers
                     _context.Update(inmueble);
                     await _context.SaveChangesAsync();
 
-                    // 🔹 Invalidar la cache
+                    // Invalidar la cache
                     await _cache.SetStringAsync("Catalogo_Version", DateTime.UtcNow.Ticks.ToString());
                 }
                 catch (DbUpdateConcurrencyException)
@@ -105,7 +133,7 @@ namespace PortalInmobiliario.Controllers
                 _context.Inmuebles.Remove(inmueble);
                 await _context.SaveChangesAsync();
 
-                // 🔹 Invalidar la cache
+                // Invalidar la cache
                 await _cache.SetStringAsync("Catalogo_Version", DateTime.UtcNow.Ticks.ToString());
             }
             return RedirectToAction(nameof(Index));
@@ -123,7 +151,7 @@ namespace PortalInmobiliario.Controllers
             _context.Update(inmueble);
             await _context.SaveChangesAsync();
 
-            // 🔹 Invalidar la cache
+            // Invalidar la cache
             await _cache.SetStringAsync("Catalogo_Version", DateTime.UtcNow.Ticks.ToString());
 
             return RedirectToAction(nameof(Index));
