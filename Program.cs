@@ -21,6 +21,25 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 
 builder.Services.AddControllersWithViews();
 
+// ✅ Redis
+var redisConnection = builder.Configuration.GetConnectionString("Redis") 
+                      ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
+                      ?? "localhost:6379";
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnection;
+    options.InstanceName = "PortalInmobiliario_";
+});
+
+// ✅ Sesiones
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 var app = builder.Build();
 
 // Pipeline
@@ -35,13 +54,11 @@ else
 }
 
 app.UseHttpsRedirection();
-
-// si prefieres el nuevo estilo de .NET 9, deja MapStaticAssets()
-// app.UseStaticFiles();
-
 app.UseRouting();
 
-app.UseAuthentication();  // ✅ importante
+app.UseSession();  // ✅ aquí
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

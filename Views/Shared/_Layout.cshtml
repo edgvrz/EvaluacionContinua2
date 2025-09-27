@@ -26,6 +26,18 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+                        @{
+    var ultimoId = Context.Session.GetInt32("UltimoInmuebleId");
+    var ultimoTitulo = Context.Session.GetString("UltimoInmuebleTitulo");
+}
+@if (ultimoId.HasValue && !string.IsNullOrEmpty(ultimoTitulo))
+{
+    <li class="nav-item">
+        <a class="nav-link text-primary" asp-controller="Catalogo" asp-action="Detalle" asp-route-id="@ultimoId">
+            Volver a @ultimoTitulo
+        </a>
+    </li>
+}
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
@@ -34,6 +46,18 @@
     </header>
     <div class="container">
         <main role="main" class="pb-3">
+        @{ 
+    var success = TempData["Success"] as string;
+    var error = TempData["Error"] as string;
+}
+@if (!string.IsNullOrEmpty(success))
+{
+    <div class="alert alert-success">@success</div>
+}
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger">@error</div>
+}
             @RenderBody()
         </main>
     </div>

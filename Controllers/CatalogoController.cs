@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+    using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -30,28 +30,45 @@ namespace PortalInmobiliario.Controllers
             string ciudad, TipoInmueble? tipo, decimal? precioMin,
             decimal? precioMax, int? dormitorios, int page = 1, int pageSize = 5)
         {
-            // ✅ Guardar filtros en sesión
+            // Guardar filtros en sesión
             HttpContext.Session.SetString("Filtro_Ciudad", ciudad ?? "");
             HttpContext.Session.SetString("Filtro_Tipo", tipo?.ToString() ?? "");
             HttpContext.Session.SetString("Filtro_PrecioMin", precioMin?.ToString() ?? "");
             HttpContext.Session.SetString("Filtro_PrecioMax", precioMax?.ToString() ?? "");
             HttpContext.Session.SetString("Filtro_Dormitorios", dormitorios?.ToString() ?? "");
 
-            // ✅ Generar clave para cache
-             var version = await _cache.GetStringAsync("Catalogo_Version") ?? "1";
-    string cacheKey = $"Catalogo:v{version}:{ciudad}:{tipo}:{precioMin}:{precioMax}:{dormitorios}:Page{page}";
+            // Validaciones server-side
+            if (precioMin.HasValue && precioMax.HasValue && precioMin > precioMax)
+                ModelState.AddModelError("", "El precio mínimo no puede ser mayor que el precio máximo.");
 
-    // ✅ Intentar leer del cache
-    var cachedData = await _cache.GetStringAsync(cacheKey);
-    List<Inmueble> inmuebles;
+            if ((precioMin.HasValue && precioMin < 0) || (precioMax.HasValue && precioMax < 0) || (dormitorios.HasValue && dormitorios < 0))
+                ModelState.AddModelError("", "Los valores numéricos no pueden ser negativos.");
 
-            if (!string.IsNullOrEmpty(cachedData))
+            if (!ModelState.IsValid)
             {
-                inmuebles = JsonSerializer.Deserialize<List<Inmueble>>(cachedData);
+                ViewBag.Page = 1;
+                ViewBag.TotalPages = 1;
+                return View(new List<CatalogoItemDto>());
             }
-            else
+
+            // Cache key
+            var version = await _cache.GetStringAsync("Catalogo_Version") ?? "1";
+            string cacheKey = $"Catalogo:v{version}:{ciudad}:{tipo}:{precioMin}:{precioMax}:{dormitorios}:Page{page}";
+
+            // Intentar leer del cache
+            var cached = await _cache.GetStringAsync(cacheKey);
+            CatalogoCacheDto cacheDto = null;
+
+            if (!string.IsNullOrEmpty(cached))
             {
-                var query = _context.Inmuebles.Where(i => i.Activo).AsQueryable();
+                cacheDto = JsonSerializer.Deserialize<CatalogoCacheDto>(cached);
+            }
+
+            if (cacheDto == null)
+            {
+                var query = _context.Inmuebles
+                    .Where(i => i.Activo)
+                    .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(ciudad))
                     query = query.Where(i => i.Ciudad.Contains(ciudad));
@@ -69,48 +86,78 @@ namespace PortalInmobiliario.Controllers
                     query = query.Where(i => i.Dormitorios >= dormitorios);
 
                 int totalItems = await query.CountAsync();
-                inmuebles = await query
+
+                var items = await query
+                    .OrderBy(i => i.Id)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
+                    .Select(i => new CatalogoItemDto
+                    {
+                        Id = i.Id,
+                        Codigo = i.Codigo,
+                        Titulo = i.Titulo,
+                        Imagen = i.Imagen,
+                        Tipo = i.Tipo,
+                        Ciudad = i.Ciudad,
+                        Direccion = i.Direccion,
+                        Dormitorios = i.Dormitorios,
+                        Banos = i.Banos,
+                        MetrosCuadrados = i.MetrosCuadrados,
+                        Precio = i.Precio,
+                        Activo = i.Activo,
+                        ReservaExpiracionUtc = _context.Reservas
+                            .Where(r => r.InmuebleId == i.Id && r.FechaExpiracion > DateTime.UtcNow)
+                            .Select(r => (DateTime?)r.FechaExpiracion)
+                            .FirstOrDefault()
+                    })
                     .ToListAsync();
 
-                ViewBag.Page = page;
-                ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+                cacheDto = new CatalogoCacheDto { Items = items, TotalItems = totalItems };
 
-           
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60)
                 };
-                await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(inmuebles), cacheOptions);
+                await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(cacheDto), cacheOptions);
             }
 
-            return View(inmuebles);
+            ViewBag.Page = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(cacheDto.TotalItems / (double)pageSize);
+
+            return View(cacheDto.Items);
         }
 
         // GET: /Catalogo/Detalle/5
         public async Task<IActionResult> Detalle(int id)
         {
             var inmueble = await _context.Inmuebles
-                .Include(i => i.Reserva)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             if (inmueble == null)
                 return NotFound();
 
-            /
+            // obtener reserva activa
+            var reservaActiva = await _context.Reservas
+                .FirstOrDefaultAsync(r => r.InmuebleId == id && r.FechaExpiracion > DateTime.UtcNow);
+
+            inmueble.Reserva = reservaActiva;
+
             HttpContext.Session.SetInt32("UltimoInmuebleId", id);
             HttpContext.Session.SetString("UltimoInmuebleTitulo", inmueble.Titulo);
 
             return View(inmueble);
         }
-        
 
         // GET: /Catalogo/AgendarVisita/5
         [Authorize]
         public IActionResult AgendarVisita(int id)
         {
-            var visita = new Visita { InmuebleId = id, FechaInicio = DateTime.Now, FechaFin = DateTime.Now.AddHours(1) };
+            var visita = new Visita
+            {
+                InmuebleId = id,
+                FechaInicio = DateTime.Now,
+                FechaFin = DateTime.Now.AddHours(1)
+            };
             return View(visita);
         }
 
@@ -123,13 +170,20 @@ namespace PortalInmobiliario.Controllers
 
             visita.UsuarioId = user.Id;
 
+            // Convertir a UTC
+            visita.FechaInicio = DateTime.SpecifyKind(visita.FechaInicio, DateTimeKind.Local).ToUniversalTime();
+            visita.FechaFin = DateTime.SpecifyKind(visita.FechaFin, DateTimeKind.Local).ToUniversalTime();
+
             // Validaciones
             if (visita.FechaInicio >= visita.FechaFin)
             {
                 ModelState.AddModelError("", "La fecha de inicio debe ser menor que la fecha de fin.");
             }
 
-            if (visita.FechaInicio.Hour < 8 || visita.FechaFin.Hour > 19)
+            var inicioLocal = visita.FechaInicio.ToLocalTime().TimeOfDay;
+            var finLocal = visita.FechaFin.ToLocalTime().TimeOfDay;
+
+            if (inicioLocal < TimeSpan.FromHours(8) || finLocal > TimeSpan.FromHours(19))
             {
                 ModelState.AddModelError("", "Las visitas deben estar dentro del horario laboral (08:00 - 19:00).");
             }
@@ -166,12 +220,14 @@ namespace PortalInmobiliario.Controllers
             if (user == null) return Challenge();
 
             var inmueble = await _context.Inmuebles
-                .Include(i => i.Reserva)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             if (inmueble == null) return NotFound();
 
-            if (inmueble.Reserva != null && inmueble.Reserva.FechaExpiracion > DateTime.UtcNow)
+            var existeReservaActiva = await _context.Reservas
+                .AnyAsync(r => r.InmuebleId == id && r.FechaExpiracion > DateTime.UtcNow);
+
+            if (existeReservaActiva)
             {
                 TempData["Error"] = "Este inmueble ya tiene una reserva activa.";
                 return RedirectToAction("Detalle", new { id });
